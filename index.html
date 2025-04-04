@@ -1,9 +1,323 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Success!</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аудио разделы</title>
+    <style>
+        :root {
+            --primary-bg: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            --card-bg: rgba(255, 255, 255, 0.15);
+            --text-color: white;
+            --hover-effect: scale(1.02);
+            --active-effect: scale(0.98);
+            --border-radius: 15px;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            background: var(--primary-bg);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            font-family: Arial, sans-serif;
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            backdrop-filter: blur(5px);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background: var(--card-bg);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            color: var(--text-color);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: var(--hover-effect);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: var(--active-effect);
+        }
+
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            height: 120px;
+        }
+
+        .section-card:hover {
+            transform: var(--hover-effect);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .section-header {
+            flex-grow: 1;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .section-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: var(--hover-effect);
+        }
+
+        .action-btn:active {
+            transform: var(--active-effect);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+
+        .notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
-    Success!
+    <div class="container">
+        <h1 id="title">Аудио разделы</h1>
+        
+        <div class="buttons">
+            <a href="https://afonasga.t.me/" class="btn" target="_blank">TG</a>
+            <a href="#" class="btn" id="homeBtn">Всё</a>
+        </div>
+
+        <div id="sections-container">
+            <div class="loading">Загрузка разделов...</div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // Основные переменные
+        const baseUrl = window.location.href.split('?')[0];
+        const sectionsContainer = document.getElementById('sections-container');
+        const notification = document.getElementById('notification');
+        const homeBtn = document.getElementById('homeBtn');
+        const titleElement = document.getElementById('title');
+
+        // Установка кнопки "Всё" на главную страницу
+        homeBtn.href = baseUrl;
+
+        // Проверка, находимся ли мы в подразделе
+        const currentPath = window.location.pathname;
+        const isSubsection = currentPath.includes('start/');
+
+        // Если мы в подразделе, меняем кнопку "Всё" на "Назад"
+        if (isSubsection) {
+            homeBtn.textContent = 'Назад';
+            homeBtn.href = baseUrl.split('start/')[0];
+        }
+
+        // Функция для показа уведомления
+        function showNotification(message, duration = 2000) {
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
+
+        // Функция для копирования текста
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => showNotification('Ссылка скопирована!'))
+                .catch(err => console.error('Ошибка копирования:', err));
+        }
+
+        // Функция для загрузки списка разделов
+        async function loadSections() {
+            try {
+                let path = 'start/';
+                
+                // Если мы уже в подразделе, загружаем его содержимое
+                if (isSubsection) {
+                    const currentDir = currentPath.split('start/')[1].split('/')[0];
+                    path = `start/${currentDir}/`;
+                    document.title = `Раздел: ${currentDir}`;
+                    titleElement.textContent = `Раздел: ${currentDir}`;
+                }
+
+                // Запрашиваем список папок
+                const response = await fetch(path);
+                const text = await response.text();
+                
+                // Парсим HTML ответа чтобы найти все папки
+                const parser = new DOMParser();
+                const htmlDoc = parser.parseFromString(text, 'text/html');
+                const links = htmlDoc.querySelectorAll('a[href]');
+                
+                const folders = [];
+                links.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href.endsWith('/') && href !== '../') {
+                        folders.push(href.replace(/\/$/, ''));
+                    }
+                });
+
+                // Если папок нет, показываем сообщение
+                if (folders.length === 0) {
+                    sectionsContainer.innerHTML = '<div class="loading">Нет доступных разделов</div>';
+                    return;
+                }
+
+                // Загружаем информацию о каждой папке
+                const sections = [];
+                for (const folder of folders) {
+                    try {
+                        const txtResponse = await fetch(`${path}${folder}/index.txt`);
+                        if (!txtResponse.ok) continue;
+                        
+                        const title = await txtResponse.text();
+                        sections.push({
+                            name: folder,
+                            title: title.trim() || folder,
+                            path: `${path}${folder}/`
+                        });
+                    } catch (e) {
+                        console.error(`Ошибка загрузки раздела ${folder}:`, e);
+                    }
+                }
+
+                // Отображаем разделы
+                displaySections(sections);
+            } catch (error) {
+                console.error('Ошибка загрузки разделов:', error);
+                sectionsContainer.innerHTML = '<div class="loading">Ошибка загрузки разделов</div>';
+            }
+        }
+
+        // Функция для отображения разделов
+        function displaySections(sections) {
+            if (sections.length === 0) {
+                sectionsContainer.innerHTML = '<div class="loading">Нет доступных разделов</div>';
+                return;
+            }
+
+            let html = '<div class="sections-grid">';
+            
+            sections.forEach(section => {
+                html += `
+                    <div class="section-card">
+                        <div class="section-header">${section.title}</div>
+                        <div class="section-actions">
+                            <button class="action-btn open-btn" data-path="${section.path}">Открыть</button>
+                            <button class="action-btn copy-btn" data-path="${section.path}index.html">Скопировать</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            sectionsContainer.innerHTML = html;
+
+            // Добавляем обработчики событий для кнопок
+            document.querySelectorAll('.open-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    window.location.href = btn.getAttribute('data-path');
+                });
+            });
+
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const fullUrl = new URL(btn.getAttribute('data-path'), window.location.href).href;
+                    copyToClipboard(fullUrl);
+                });
+            });
+        }
+
+        // Загружаем разделы при загрузке страницы
+        loadSections();
+    </script>
 </body>
 </html>

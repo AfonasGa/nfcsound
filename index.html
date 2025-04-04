@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Аудио разделы</title>
+    <title>nfcsound</title>
     <style>
         :root {
             --primary-bg: linear-gradient(-45deg, #000000, #14213d, #1a2a5a, #000000);
@@ -39,13 +39,59 @@
 
         h1 {
             text-align: center;
-            backdrop-filter: blur(5px);
             padding: 15px;
             border-radius: var(--border-radius);
             background: var(--card-bg);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(5px);
+            font-size: 2.5rem;
+            font-weight: bold;
         }
 
+        h1::before {
+            content: 'nfcsound';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: transparent;
+            -webkit-text-stroke: 2px;
+            -webkit-text-stroke-color: #1a2a5a;
+            background: linear-gradient(90deg, #0a1128, #1a2a5a, #0a1128);
+            background-size: 200% 200%;
+            animation: textStroke 5s ease infinite;
+            border-radius: var(--border-radius);
+            z-index: -1;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+            text-shadow: 0 0 10px rgba(26, 42, 90, 0.7);
+        }
+
+        @keyframes textStroke {
+            0% {
+                -webkit-text-stroke-color: #0a1128;
+                background-position: 0% 50%;
+                text-shadow: 0 0 10px rgba(10, 17, 40, 0.7);
+            }
+            50% {
+                -webkit-text-stroke-color: #1a2a5a;
+                background-position: 100% 50%;
+                text-shadow: 0 0 15px rgba(26, 42, 90, 0.9);
+            }
+            100% {
+                -webkit-text-stroke-color: #0a1128;
+                background-position: 0% 50%;
+                text-shadow: 0 0 10px rgba(10, 17, 40, 0.7);
+            }
+        }
+
+        /* Остальные стили остаются без изменений */
         .buttons {
             display: flex;
             justify-content: center;
@@ -166,7 +212,7 @@
 </head>
 <body>
     <div class="container">
-        <h1 id="title">Аудио разделы</h1>
+        <h1 id="title">nfcsound</h1>
         
         <div class="buttons">
             <a href="https://afonasga.t.me/" class="btn" target="_blank">TG</a>
@@ -222,8 +268,8 @@
                 
                 if (pathParts.length > 1) {
                     currentPath = `start/${pathParts[1].split('/')[0]}/`;
-                    document.title = `Раздел: ${pathParts[1].split('/')[0]}`;
-                    titleElement.textContent = `Раздел: ${pathParts[1].split('/')[0]}`;
+                    document.title = `nfcsound: ${pathParts[1].split('/')[0]}`;
+                    titleElement.textContent = `nfcsound: ${pathParts[1].split('/')[0]}`;
                 }
 
                 // Получаем список папок через index.json или напрямую

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading...</title> <!-- Временный заголовок, пока грузится текст -->
+    <title>Loading...</title>
     <style>
         body {
             margin: 0;
@@ -56,7 +56,7 @@
 <body>
     <div class="circle" id="circle">Loading text...</div>
 
-    <audio id="audio" src="index.mp3"></audio>
+    <audio id="audio"></audio> <!-- Источник аудио будет установлен динамически -->
 
     <script>
         // Загрузка текста из index.txt и установка его в круг и title
@@ -64,7 +64,7 @@
             .then(response => response.text())
             .then(text => {
                 document.getElementById('circle').textContent = text;
-                document.title = text; // Устанавливаем текст в title
+                document.title = text;
             })
             .catch(error => {
                 console.error('Error loading text:', error);
@@ -72,10 +72,41 @@
                 document.title = "Error loading text";
             });
 
+        // Проверка доступности аудиофайлов (mp3 или ogg)
+        const audio = document.getElementById('audio');
+        const audioSources = ['index.mp3', 'index.ogg']; // Порядок проверки
+
+        function loadAudio() {
+            let currentSourceIndex = 0;
+
+            function tryNextSource() {
+                if (currentSourceIndex >= audioSources.length) {
+                    console.error('No supported audio file found.');
+                    return;
+                }
+
+                const source = audioSources[currentSourceIndex];
+                audio.src = source;
+                audio.load();
+
+                audio.oncanplay = () => {
+                    console.log(`Audio loaded: ${source}`);
+                };
+
+                audio.onerror = () => {
+                    console.error(`Failed to load audio: ${source}`);
+                    currentSourceIndex++;
+                    tryNextSource(); // Пробуем следующий источник
+                };
+            }
+
+            tryNextSource();
+        }
+
+        loadAudio();
+
         // Воспроизведение звука при клике
         const circle = document.getElementById('circle');
-        const audio = document.getElementById('audio');
-
         circle.addEventListener('click', () => {
             audio.play().catch(e => console.error('Audio play failed:', e));
         });

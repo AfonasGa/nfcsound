@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title> <!-- Временный заголовок, пока грузится текст -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .circle {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: transform 0.3s;
+            color: white;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        .circle:hover {
+            transform: scale(1.05);
+        }
+
+        .circle:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="circle" id="circle">Loading text...</div>
+
+    <audio id="audio" src="index.mp3"></audio>
+
+    <script>
+        // Загрузка текста из index.txt и установка его в круг и title
+        fetch('index.txt')
+            .then(response => response.text())
+            .then(text => {
+                document.getElementById('circle').textContent = text;
+                document.title = text; // Устанавливаем текст в title
+            })
+            .catch(error => {
+                console.error('Error loading text:', error);
+                document.getElementById('circle').textContent = "Failed to load text.";
+                document.title = "Error loading text";
+            });
+
+        // Воспроизведение звука при клике
+        const circle = document.getElementById('circle');
+        const audio = document.getElementById('audio');
+
+        circle.addEventListener('click', () => {
+            audio.play().catch(e => console.error('Audio play failed:', e));
+        });
+    </script>
+</body>
+</html>

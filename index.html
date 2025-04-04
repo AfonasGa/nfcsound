@@ -186,17 +186,7 @@
         const titleElement = document.getElementById('title');
 
         // Установка кнопки "Всё" на главную страницу
-        homeBtn.href = baseUrl;
-
-        // Проверка, находимся ли мы в подразделе
-        const currentPath = window.location.pathname;
-        const isSubsection = currentPath.includes('start/');
-
-        // Если мы в подразделе, меняем кнопку "Всё" на "Назад"
-        if (isSubsection) {
-            homeBtn.textContent = 'Назад';
-            homeBtn.href = baseUrl.split('start/')[0];
-        }
+        homeBtn.href = baseUrl.includes('/start/') ? baseUrl.split('/start/')[0] : baseUrl;
 
         // Функция для показа уведомления
         function showNotification(message, duration = 2000) {
@@ -215,35 +205,53 @@
                 .catch(err => console.error('Ошибка копирования:', err));
         }
 
+        // Функция для проверки существования файла
+        async function fileExists(url) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                return response.ok;
+            } catch {
+                return false;
+            }
+        }
+
         // Функция для загрузки списка разделов
         async function loadSections() {
             try {
-                let path = 'start/';
+                // Определяем текущий путь
+                let currentPath = 'start/';
+                const pathParts = window.location.pathname.split('/start/');
                 
-                // Если мы уже в подразделе, загружаем его содержимое
-                if (isSubsection) {
-                    const currentDir = currentPath.split('start/')[1].split('/')[0];
-                    path = `start/${currentDir}/`;
-                    document.title = `Раздел: ${currentDir}`;
-                    titleElement.textContent = `Раздел: ${currentDir}`;
+                if (pathParts.length > 1) {
+                    currentPath = `start/${pathParts[1].split('/')[0]}/`;
+                    document.title = `Раздел: ${pathParts[1].split('/')[0]}`;
+                    titleElement.textContent = `Раздел: ${pathParts[1].split('/')[0]}`;
+                    homeBtn.textContent = 'Назад';
                 }
 
-                // Запрашиваем список папок
-                const response = await fetch(path);
-                const text = await response.text();
+                // Получаем список папок через index.json или напрямую
+                let folders = [];
                 
-                // Парсим HTML ответа чтобы найти все папки
-                const parser = new DOMParser();
-                const htmlDoc = parser.parseFromString(text, 'text/html');
-                const links = htmlDoc.querySelectorAll('a[href]');
+                // Попробуем получить список из index.json
+                const jsonExists = await fileExists(`${currentPath}index.json`);
                 
-                const folders = [];
-                links.forEach(link => {
-                    const href = link.getAttribute('href');
-                    if (href.endsWith('/') && href !== '../') {
-                        folders.push(href.replace(/\/$/, ''));
-                    }
-                });
+                if (jsonExists) {
+                    const response = await fetch(`${currentPath}index.json`);
+                    const data = await response.json();
+                    folders = data.folders || [];
+                } else {
+                    // Альтернативный метод для серверов без JSON
+                    const response = await fetch(currentPath);
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const htmlDoc = parser.parseFromString(text, 'text/html');
+                    const links = Array.from(htmlDoc.querySelectorAll('a[href]'))
+                        .map(link => link.getAttribute('href'))
+                        .filter(href => href.endsWith('/') && href !== '../')
+                        .map(href => href.replace(/\/$/, ''));
+                    
+                    folders = links;
+                }
 
                 // Если папок нет, показываем сообщение
                 if (folders.length === 0) {
@@ -255,14 +263,18 @@
                 const sections = [];
                 for (const folder of folders) {
                     try {
-                        const txtResponse = await fetch(`${path}${folder}/index.txt`);
-                        if (!txtResponse.ok) continue;
+                        const txtUrl = `${currentPath}${folder}/index.txt`;
+                        const txtExists = await fileExists(txtUrl);
                         
+                        if (!txtExists) continue;
+                        
+                        const txtResponse = await fetch(txtUrl);
                         const title = await txtResponse.text();
+                        
                         sections.push({
                             name: folder,
                             title: title.trim() || folder,
-                            path: `${path}${folder}/`
+                            path: `${currentPath}${folder}/`
                         });
                     } catch (e) {
                         console.error(`Ошибка загрузки раздела ${folder}:`, e);
@@ -291,7 +303,7 @@
                     <div class="section-card">
                         <div class="section-header">${section.title}</div>
                         <div class="section-actions">
-                            <button class="action-btn open-btn" data-path="${section.path}">Открыть</button>
+                            <button class="action-btn open-btn" data-path="${section.path}index.html">Открыть</button>
                             <button class="action-btn copy-btn" data-path="${section.path}index.html">Скопировать</button>
                         </div>
                     </div>

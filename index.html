@@ -249,17 +249,20 @@
                 const response = await fetch('start/index.json');
                 if (!response.ok) throw new Error('Не удалось загрузить index.json');
                 
-                const { folders } = await response.json();
-                if (!folders?.length) {
+                const data = await response.json();
+                const folders = data.folders || [];
+                
+                if (folders.length === 0) {
                     sectionsContainer.innerHTML = '<div class="loading">Нет доступных разделов</div>';
                     return;
                 }
 
-                // Загружаем названия разделов
-                const sections = await Promise.all(folders.map(async folder => {
+                // Загружаем информацию о каждой папке
+                const sectionsPromises = folders.map(async folder => {
                     try {
                         const txtResponse = await fetch(`start/${folder}/index.txt`);
                         if (!txtResponse.ok) return null;
+                        
                         const title = (await txtResponse.text()).trim();
                         return {
                             name: folder,
@@ -272,7 +275,8 @@
                     }
                 });
 
-                displaySections(sections.filter(Boolean));
+                const sections = (await Promise.all(sectionsPromises)).filter(Boolean);
+                displaySections(sections);
             } catch (error) {
                 console.error('Ошибка загрузки разделов:', error);
                 sectionsContainer.innerHTML = '<div class="loading">Ошибка загрузки разделов</div>';
@@ -307,13 +311,15 @@
             // Обработчики событий для кнопок
             document.querySelectorAll('.open-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    window.location.href = btn.dataset.path;
+                    window.location.href = btn.getAttribute('data-path');
                 });
             });
 
             document.querySelectorAll('.copy-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    copyToClipboard(new URL(btn.dataset.path, window.location.href).href);
+                    const path = btn.getAttribute('data-path');
+                    const fullUrl = new URL(path, window.location.href).href;
+                    copyToClipboard(fullUrl);
                 });
             });
         }

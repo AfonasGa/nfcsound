@@ -91,7 +91,6 @@
             }
         }
 
-        /* Остальные стили остаются без изменений */
         .buttons {
             display: flex;
             justify-content: center;
@@ -227,19 +226,14 @@
 
     <script>
         // Основные переменные
-        const baseUrl = window.location.href.split('?')[0];
         const sectionsContainer = document.getElementById('sections-container');
         const notification = document.getElementById('notification');
-        const titleElement = document.getElementById('title');
 
         // Функция для показа уведомления
         function showNotification(message, duration = 2000) {
             notification.textContent = message;
             notification.classList.add('show');
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, duration);
+            setTimeout(() => notification.classList.remove('show'), duration);
         }
 
         // Функция для копирования текста
@@ -249,83 +243,36 @@
                 .catch(err => console.error('Ошибка копирования:', err));
         }
 
-        // Функция для проверки существования файла
-        async function fileExists(url) {
-            try {
-                const response = await fetch(url, { method: 'HEAD' });
-                return response.ok;
-            } catch {
-                return false;
-            }
-        }
-
         // Функция для загрузки списка разделов
         async function loadSections() {
             try {
-                // Определяем текущий путь
-                let currentPath = 'start/';
-                const pathParts = window.location.pathname.split('/start/');
+                const response = await fetch('start/index.json');
+                if (!response.ok) throw new Error('Не удалось загрузить index.json');
                 
-                if (pathParts.length > 1) {
-                    currentPath = `start/${pathParts[1].split('/')[0]}/`;
-                    document.title = `nfcsound: ${pathParts[1].split('/')[0]}`;
-                    titleElement.textContent = `nfcsound: ${pathParts[1].split('/')[0]}`;
-                }
-
-                // Получаем список папок через index.json или напрямую
-                let folders = [];
-                
-                // Попробуем получить список из index.json
-                const jsonExists = await fileExists(`${currentPath}index.json`);
-                
-                if (jsonExists) {
-                    const response = await fetch(`${currentPath}index.json`);
-                    const data = await response.json();
-                    folders = data.folders || [];
-                } else {
-                    // Альтернативный метод для серверов без JSON
-                    const response = await fetch(currentPath);
-                    const text = await response.text();
-                    const parser = new DOMParser();
-                    const htmlDoc = parser.parseFromString(text, 'text/html');
-                    const links = Array.from(htmlDoc.querySelectorAll('a[href]'))
-                        .map(link => link.getAttribute('href'))
-                        .filter(href => href.endsWith('/') && href !== '../')
-                        .map(href => href.replace(/\/$/, ''));
-                    
-                    folders = links;
-                }
-
-                // Если папок нет, показываем сообщение
-                if (folders.length === 0) {
+                const { folders } = await response.json();
+                if (!folders?.length) {
                     sectionsContainer.innerHTML = '<div class="loading">Нет доступных разделов</div>';
                     return;
                 }
 
-                // Загружаем информацию о каждой папке
-                const sections = [];
-                for (const folder of folders) {
+                // Загружаем названия разделов
+                const sections = await Promise.all(folders.map(async folder => {
                     try {
-                        const txtUrl = `${currentPath}${folder}/index.txt`;
-                        const txtExists = await fileExists(txtUrl);
-                        
-                        if (!txtExists) continue;
-                        
-                        const txtResponse = await fetch(txtUrl);
-                        const title = await txtResponse.text();
-                        
-                        sections.push({
+                        const txtResponse = await fetch(`start/${folder}/index.txt`);
+                        if (!txtResponse.ok) return null;
+                        const title = (await txtResponse.text()).trim();
+                        return {
                             name: folder,
-                            title: title.trim() || folder,
-                            path: `${currentPath}${folder}/`
-                        });
+                            title: title || folder,
+                            path: `start/${folder}/`
+                        };
                     } catch (e) {
                         console.error(`Ошибка загрузки раздела ${folder}:`, e);
+                        return null;
                     }
-                }
+                });
 
-                // Отображаем разделы
-                displaySections(sections);
+                displaySections(sections.filter(Boolean));
             } catch (error) {
                 console.error('Ошибка загрузки разделов:', error);
                 sectionsContainer.innerHTML = '<div class="loading">Ошибка загрузки разделов</div>';
@@ -334,39 +281,39 @@
 
         // Функция для отображения разделов
         function displaySections(sections) {
-            if (sections.length === 0) {
+            if (!sections.length) {
                 sectionsContainer.innerHTML = '<div class="loading">Нет доступных разделов</div>';
                 return;
             }
 
-            let html = '<div class="sections-grid">';
-            
-            sections.forEach(section => {
-                html += `
-                    <div class="section-card">
-                        <div class="section-header">${section.title}</div>
-                        <div class="section-actions">
-                            <button class="action-btn open-btn" data-path="${section.path}index.html">Открыть</button>
-                            <button class="action-btn copy-btn" data-path="${section.path}index.html">Скопировать</button>
+            sectionsContainer.innerHTML = `
+                <div class="sections-grid">
+                    ${sections.map(section => `
+                        <div class="section-card">
+                            <div class="section-header">${section.title}</div>
+                            <div class="section-actions">
+                                <button class="action-btn open-btn" data-path="${section.path}index.html">
+                                    Открыть
+                                </button>
+                                <button class="action-btn copy-btn" data-path="${section.path}">
+                                    Скопировать
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            sectionsContainer.innerHTML = html;
+                    `).join('')}
+                </div>
+            `;
 
-            // Добавляем обработчики событий для кнопок
+            // Обработчики событий для кнопок
             document.querySelectorAll('.open-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    window.location.href = btn.getAttribute('data-path');
+                    window.location.href = btn.dataset.path;
                 });
             });
 
             document.querySelectorAll('.copy-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const fullUrl = new URL(btn.getAttribute('data-path'), window.location.href).href;
-                    copyToClipboard(fullUrl);
+                    copyToClipboard(new URL(btn.dataset.path, window.location.href).href);
                 });
             });
         }

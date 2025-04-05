@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading...</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(-45deg, #000000, #14213d, #1a2a5a, #000000);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .circle {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: transform 0.3s;
+            color: white;
+            font-size: 18px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .circle:hover {
+            transform: scale(1.05);
+        }
+
+        .circle:active {
+            transform: scale(0.95);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="circle" id="circle">Loading text...</div>
+
+    <div class="buttons">
+        <a href="https://afonasga1.t.me/" class="btn" target="_blank">TG</a>
+        <a href="https://afonasga.github.io/nfcsound/" class="btn" target="_blank">Всё</a>
+    </div>
+
+    <audio id="audio"></audio>
+
+    <script>
+        // Загрузка текста из index.txt и установка его в круг и title
+        fetch('index.txt')
+            .then(response => response.text())
+            .then(text => {
+                document.getElementById('circle').textContent = text;
+                document.title = text;
+            })
+            .catch(error => {
+                console.error('Error loading text:', error);
+                document.getElementById('circle').textContent = "Failed to load text.";
+                document.title = "Error loading text";
+            });
+
+        // Проверка доступности аудиофайлов (mp3 или ogg)
+        const audio = document.getElementById('audio');
+        const audioSources = ['index.mp3', 'index.ogg'];
+
+        function loadAudio() {
+            let currentSourceIndex = 0;
+
+            function tryNextSource() {
+                if (currentSourceIndex >= audioSources.length) {
+                    console.error('No supported audio file found.');
+                    return;
+                }
+
+                const source = audioSources[currentSourceIndex];
+                audio.src = source;
+                audio.load();
+
+                audio.oncanplay = () => {
+                    console.log(`Audio loaded: ${source}`);
+                };
+
+                audio.onerror = () => {
+                    console.error(`Failed to load audio: ${source}`);
+                    currentSourceIndex++;
+                    tryNextSource();
+                };
+            }
+
+            tryNextSource();
+        }
+
+        loadAudio();
+
+        // Воспроизведение звука при клике
+        const circle = document.getElementById('circle');
+        circle.addEventListener('click', () => {
+            audio.play().catch(e => console.error('Audio play failed:', e));
+        });
+    </script>
+</body>
+</html>
